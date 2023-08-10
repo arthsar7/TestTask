@@ -1,33 +1,50 @@
-package ru.student.test
+package ru.student.test.presentation
 
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.os.Parcelable
+import android.provider.MediaStore
 import android.util.Log
 import android.webkit.CookieManager
+import android.webkit.ValueCallback
+import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.FileProvider
 import com.google.firebase.remoteconfig.BuildConfig
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings
+import ru.student.test.R
 import ru.student.test.databinding.ActivityMainBinding
+import java.io.File
+import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
     private val binding by lazy {
         ActivityMainBinding.inflate(layoutInflater)
     }
+
     private var url: String? = null
     private val remoteConfig by lazy {
         FirebaseRemoteConfig.getInstance()
     }
+
+    private var imageUri: Uri? = null
+    private var mFilePathCallback: ValueCallback<Array<Uri>>? = null
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
@@ -57,7 +74,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         handleOnBackPressed()
-
 
     }
 
@@ -95,7 +111,8 @@ class MainActivity : AppCompatActivity() {
                 else -> false
             }
         } else {
-            @Suppress("DEPRECATION") connectivityManager.run {
+            @Suppress("DEPRECATION")
+            connectivityManager.run {
                 connectivityManager.activeNetworkInfo?.run {
                     result = when (type) {
                         ConnectivityManager.TYPE_WIFI -> true
@@ -112,7 +129,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun launchPlaceholder() {
-        Toast.makeText(this, "Placeholder", Toast.LENGTH_SHORT).show() //TODO: add placeholder
+        startActivity(PlaceholderActivity.newIntent(this))
     }
 
     private fun getUrlFromConfig(savedInstanceState: Bundle?) {
@@ -137,7 +154,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun launchNoInternet() {
-        val intent = Intent(this, NoInternetActivity::class.java)
+        val intent = NoInternetActivity.getIntent(this)
         startActivity(intent)
     }
 
@@ -146,19 +163,48 @@ class MainActivity : AppCompatActivity() {
         val cookieManager = CookieManager.getInstance()
         cookieManager.setAcceptCookie(true)
         binding.webView.webViewClient = object : WebViewClient() {
-            override fun onPageFinished(view: WebView?, url: String?) {
-                cookieManager.flush()
+
+            override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
+                binding.webView.loadUrl(url ?: "")
+                return true
+            }
+            override fun shouldOverrideUrlLoading(
+                view: WebView?,
+                request: WebResourceRequest?
+            ): Boolean {
+                binding.webView.loadUrl(request?.url?.toString() ?: "")
+                return true
             }
         }
-        binding.webView.settings.javaScriptEnabled = true
-        binding.webView.settings.loadWithOverviewMode = true
-        binding.webView.settings.useWideViewPort = true
-        binding.webView.settings.domStorageEnabled = true
-        binding.webView.settings.databaseEnabled = true
-        binding.webView.settings.setSupportZoom(false)
-        binding.webView.settings.allowFileAccess = true
-        binding.webView.settings.allowContentAccess = true
-        binding.webView.settings.javaScriptCanOpenWindowsAutomatically = true
+
+        binding.webView.webChromeClient = object : WebChromeClient() {
+
+            override fun onShowFileChooser(
+                webView: WebView?,
+                filePathCallback: ValueCallback<Array<Uri>>?,
+                fileChooserParams: FileChooserParams?
+            ): Boolean {
+                mFilePathCallback = null
+                mFilePathCallback = filePathCallback
+
+                takePhoto()
+
+                return true
+            }
+        }
+        with(binding.webView.settings){
+            javaScriptEnabled = true
+            loadWithOverviewMode = true
+            useWideViewPort = true
+            domStorageEnabled = true
+            databaseEnabled = true
+            setSupportZoom(false)
+            allowFileAccess = true
+            allowContentAccess = true
+            javaScriptCanOpenWindowsAutomatically = true
+        }
+
+
         if (savedInstanceState != null) {
             binding.webView.restoreState(savedInstanceState)
         } else {
@@ -209,5 +255,48 @@ class MainActivity : AppCompatActivity() {
         val editor = sharedPreferences.edit()
         editor.putString("url", url)
         editor.apply()
+    }
+
+    private val startForResult = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            val uri = intent?.data ?: return@registerForActivityResult
+            mFilePathCallback?.onReceiveValue(arrayOf(uri))
+            mFilePathCallback = null
+        }
+
+    }
+    private fun takePhoto() {
+        var photoFile : File? = null
+        val authorities : String = this.packageName + ".provider"
+        try {
+            photoFile = createImageFile()
+            imageUri = FileProvider.getUriForFile(this, authorities, photoFile)
+        } catch(e: IOException) {
+            e.printStackTrace()
+        }
+
+        val captureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        captureIntent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri)
+        val photo = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+        val chooserIntent = Intent.createChooser(photo, "Image Chooser")
+        chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf<Parcelable>(captureIntent))
+        startForResult.launch(chooserIntent)
+    }
+    @SuppressLint("SimpleDateFormat")
+    @Throws(IOException::class)
+    private fun createImageFile(): File {
+        val imageStorageDir = File(
+            Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_PICTURES
+            ), "AndroidExampleFolder"
+        )
+        if (!imageStorageDir.exists()) {
+            imageStorageDir.mkdirs()
+        }
+
+        val imageFileName = "JPEG_${SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())}"
+        return File(imageStorageDir, File.separator + imageFileName + ".jpg")
     }
 }
