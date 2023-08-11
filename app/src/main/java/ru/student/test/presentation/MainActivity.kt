@@ -13,6 +13,7 @@ import android.os.Parcelable
 import android.provider.MediaStore
 import android.util.Log
 import android.webkit.CookieManager
+import android.webkit.PermissionRequest
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
@@ -79,7 +80,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun setRemoteConfigSettings() {
         val settings =
-            FirebaseRemoteConfigSettings.Builder().setMinimumFetchIntervalInSeconds(0).build()
+            FirebaseRemoteConfigSettings.Builder()
+                .setMinimumFetchIntervalInSeconds(3600)
+                .build()
         remoteConfig.setConfigSettingsAsync(settings)
         remoteConfig.setDefaultsAsync(R.xml.remote_config_default)
     }
@@ -135,21 +138,22 @@ class MainActivity : AppCompatActivity() {
     private fun getUrlFromConfig(savedInstanceState: Bundle?) {
         try {
             remoteConfig.fetchAndActivate().addOnCompleteListener(this) {
-                if (!it.isSuccessful) {
+                if (it.isSuccessful) {
+                    url = remoteConfig.getString("url")
+                    if (url.isNullOrBlank() || checkIsEmu()) {
+                        launchPlaceholder()
+                    }
+                    else {
+                        setWebView(savedInstanceState, url!!)
+                        saveUrl(url!!)
+                    }
+                } else {
                     launchPlaceholder()
                 }
             }
         }
         catch (e: Exception) {
             launchNoInternet()
-        }
-
-        url = remoteConfig.getString("url")
-        if (url.isNullOrBlank() || checkIsEmu()) {
-            launchPlaceholder()
-        } else {
-            setWebView(savedInstanceState, url!!)
-            saveUrl(url!!)
         }
     }
 
@@ -178,6 +182,10 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.webView.webChromeClient = object : WebChromeClient() {
+
+            override fun onPermissionRequest(request: PermissionRequest?) {
+                request?.grant(request.resources)
+            }
 
             override fun onShowFileChooser(
                 webView: WebView?,
@@ -261,14 +269,14 @@ class MainActivity : AppCompatActivity() {
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == RESULT_OK) {
-            val uri = intent?.data ?: return@registerForActivityResult
+            val uri = result.data?.data ?: return@registerForActivityResult
             mFilePathCallback?.onReceiveValue(arrayOf(uri))
             mFilePathCallback = null
         }
 
     }
     private fun takePhoto() {
-        var photoFile : File? = null
+        val photoFile : File?
         val authorities : String = this.packageName + ".provider"
         try {
             photoFile = createImageFile()
