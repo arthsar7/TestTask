@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+    xmlns:tools="http://schemas.android.com/tools"
+    package="wood.app.gannoz">
 
 
     <uses-feature
@@ -47,7 +48,7 @@
         <activity android:name=".presentation.NoInternetActivity" />
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="ru.student.test.provider"
+            android:authorities="wood.app.gannoz.provider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data

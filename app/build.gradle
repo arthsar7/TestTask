@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace 'ru.student.test'
+    namespace 'wood.app.gannoz'
     compileSdk 33
 
     defaultConfig {
-        applicationId "ru.student.test"
+        applicationId "wood.app.gannoz"
         minSdk 21
         targetSdk 33
         versionCode 1

@@ -1,33 +1,33 @@
 {
   "project_info": {
-    "project_number": "206441400373",
-    "project_id": "test-6a8df",
-    "storage_bucket": "test-6a8df.appspot.com"
+    "project_number": "632497769120",
+    "project_id": "woap-e482c",
+    "storage_bucket": "woap-e482c.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:206441400373:android:efd97e8e4b10764f2e097c",
+        "mobilesdk_app_id": "1:632497769120:android:62b3fe2252cf522c4cd7c5",
         "android_client_info": {
-          "package_name": "ru.student.test"
+          "package_name": "wood.app.gannoz"
         }
       },
       "oauth_client": [
         {
-          "client_id": "206441400373-3q9ctsm31q734dhi8j3h0du42hbfor3n.apps.googleusercontent.com",
+          "client_id": "632497769120-5j9d0ku963es2n3lrroemjb6rge8mfvu.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyDhC0kQF8Cw5BsVsCx02X7C1I_R8o5CDSo"
+          "current_key": "AIzaSyBBDSWBQ-8QBHcHWGx8kk5mx55j0aWGK-Q"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "206441400373-3q9ctsm31q734dhi8j3h0du42hbfor3n.apps.googleusercontent.com",
+              "client_id": "632497769120-5j9d0ku963es2n3lrroemjb6rge8mfvu.apps.googleusercontent.com",
               "client_type": 3
             }
           ]
