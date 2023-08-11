@@ -1,3 +1,16 @@
 <resources>
-    <string name="app_name">test</string>
+    <string name="app_name">Holly</string>
+    <string name="question_number">%s/%s</string>
+    <string name="question_score">Score: %s</string>
+    <string name="hockey_quiz_title">Hockey Quiz</string>
+    <string name="submit">Submit</string>
+    <string name="choose_level">Choose level</string>
+    <string name="next_question">Next question</string>
+    <string name="finish">Finish</string>
+    <string name="right_answers">Right answers: %s </string>
+    <string name="required_answers">Required amount of right answers: %s</string>
+    <string name="score_percentage">Percentage of right answers: %s</string>
+    <string name="win">Congratulations, you won!</string>
+    <string name="lose">Unfortunately, you lose</string>
+    <string name="network_required">Network connection is required to continue</string>
 </resources>
